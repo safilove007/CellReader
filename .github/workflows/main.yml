@@ -24,9 +24,21 @@ jobs:
       - name: Install Android platform 36
         run: sdkmanager "platforms;android-36"
 
-      - name: Replace android.jar with hidden-API version
+      - name: Download and install hidden-API android.jar
         run: |
-          curl -L -o android.jar https://github.com/Reginer/aosp-android-jar/releases/download/36.1/android-36.jar
+          set -e
+          TAG="36.1"
+          JSON=$(curl -sL "https://api.github.com/repos/Reginer/aosp-android-jar/releases/tags/$TAG")
+          URL=$(echo "$JSON" | grep -o '"browser_download_url": *"[^"]*android-36[^"]*\.jar"' | cut -d'"' -f4)
+          if [ -z "$URL" ]; then
+            echo "Could not find android-36 jar asset. Full release JSON:"
+            echo "$JSON"
+            exit 1
+          fi
+          echo "Downloading: $URL"
+          curl -L -o android.jar "$URL"
+          echo "Verifying it's a real jar/zip:"
+          unzip -l android.jar | head -5
           cp android.jar "$ANDROID_HOME/platforms/android-36/android.jar"
 
       - name: Grant execute permission for gradlew
