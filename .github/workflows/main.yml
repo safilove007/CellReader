@@ -24,22 +24,25 @@ jobs:
       - name: Install Android platform 36
         run: sdkmanager "platforms;android-36"
 
-      - name: Download and install hidden-API android.jar
+      - name: Locate and install hidden-API android.jar
         run: |
           set -e
-          TAG="36.1"
-          JSON=$(curl -sL "https://api.github.com/repos/Reginer/aosp-android-jar/releases/tags/$TAG")
-          URL=$(echo "$JSON" | grep -o '"browser_download_url": *"[^"]*android-36[^"]*\.jar"' | cut -d'"' -f4)
-          if [ -z "$URL" ]; then
-            echo "Could not find android-36 jar asset. Full release JSON:"
-            echo "$JSON"
+          git clone --depth 1 --branch 36.1 https://github.com/Reginer/aosp-android-jar.git aosp-jar-src
+          cd aosp-jar-src
+          git lfs pull || true
+          JAR_PATH=$(find . -iname "android-36*.jar" ! -iname "*stub*" ! -iname "*src*" | head -1)
+          if [ -z "$JAR_PATH" ]; then
+            echo "Could not locate an android-36 jar in the repo. All .jar files found:"
+            find . -iname "*.jar"
             exit 1
           fi
-          echo "Downloading: $URL"
-          curl -L -o android.jar "$URL"
-          echo "Verifying it's a real jar/zip:"
-          unzip -l android.jar | head -5
-          cp android.jar "$ANDROID_HOME/platforms/android-36/android.jar"
+          echo "Found jar at: $JAR_PATH"
+          ls -la "$JAR_PATH"
+          file "$JAR_PATH"
+          cp "$JAR_PATH" "$ANDROID_HOME/platforms/android-36/android.jar"
+          cd ..
+          echo "Verifying installed jar:"
+          unzip -l "$ANDROID_HOME/platforms/android-36/android.jar" | head -5
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
