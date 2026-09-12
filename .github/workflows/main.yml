@@ -24,23 +24,11 @@ jobs:
       - name: Install Android platform 36
         run: sdkmanager "platforms;android-36"
 
-      - name: Locate and install hidden-API android.jar
+      - name: Install hidden-API android.jar
         run: |
           set -e
           git clone --depth 1 --branch 36.1 https://github.com/Reginer/aosp-android-jar.git aosp-jar-src
-          cd aosp-jar-src
-          git lfs pull || true
-          JAR_PATH=$(find . -iname "android-36*.jar" ! -iname "*stub*" ! -iname "*src*" | head -1)
-          if [ -z "$JAR_PATH" ]; then
-            echo "Could not locate an android-36 jar in the repo. All .jar files found:"
-            find . -iname "*.jar"
-            exit 1
-          fi
-          echo "Found jar at: $JAR_PATH"
-          ls -la "$JAR_PATH"
-          file "$JAR_PATH"
-          cp "$JAR_PATH" "$ANDROID_HOME/platforms/android-36/android.jar"
-          cd ..
+          cp aosp-jar-src/android-36/android.jar "$ANDROID_HOME/platforms/android-36/android.jar"
           echo "Verifying installed jar:"
           unzip -l "$ANDROID_HOME/platforms/android-36/android.jar" | head -5
 
